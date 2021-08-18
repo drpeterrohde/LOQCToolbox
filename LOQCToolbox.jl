@@ -1,7 +1,6 @@
 using Symbolics, SymbolicUtils, LinearAlgebra, BlockDiagonals
 
-modes = 5
-@variables h[1:modes], v[1:modes]
+@syms h[..] v[..]
 
 function ApplyU(state, U, modes)
     dim = Int(size(U)[1]/2)
@@ -37,9 +36,9 @@ function BeamSplitter(eta)
     return BlockDiagonal([M,M])
 end
 
-###
+### EXAMPLE
 
 state = h[1]*h[2]
 state = ApplyU(state, BeamSplitter(0.5))
-#state = ApplyU(state, PhaseShifter(1.0))
+state = ApplyU(state, PhaseShifter(1.0))
 println(state)
