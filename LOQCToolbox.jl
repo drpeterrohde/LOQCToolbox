@@ -36,9 +36,27 @@ function BeamSplitter(eta)
     return BlockDiagonal([M,M])
 end
 
+function PBS()
+    H = [1 0; 0 1]
+    V = [0 1; 1 0]
+    return BlockDiagonal([H,V])
+end
+
+function PBS(etaH, etaV)
+    H = [sqrt(etaH) sqrt(1-etaH); sqrt(1-etaH) -sqrt(etaH)]
+    V = [sqrt(etaV) sqrt(1-etaV); sqrt(1-etaV) -sqrt(etaV)]
+    return BlockDiagonal([H,V])
+end
+
+function Waveplate(theta)
+    # TO DO
+end
+
 ### EXAMPLE
 
-state = h[1]*h[2]
-state = ApplyU(state, BeamSplitter(0.5))
-state = ApplyU(state, PhaseShifter(1.0))
+state = h[2]*v[1]
+state = ApplyU(state, PBS())
 println(state)
+# state = ApplyU(state, BeamSplitter(0.5))
+# state = ApplyU(state, PhaseShifter(1.0))
+# println(state)
