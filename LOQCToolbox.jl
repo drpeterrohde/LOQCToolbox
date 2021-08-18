@@ -31,7 +31,12 @@ function PhaseShifter(phase)
     return M
 end
 
-function BeamSplitter(eta)
+function PhaseShifter(phaseH, phaseV)
+    M = [exp(phaseH*im) 0; 0 exp(phaseV*im)]
+    return M
+end
+
+function Beamsplitter(eta)
     M = [sqrt(eta) sqrt(1-eta); sqrt(1-eta) -sqrt(eta)]
     return BlockDiagonal([M,M])
 end
@@ -48,8 +53,18 @@ function PBS(etaH, etaV)
     return BlockDiagonal([H,V])
 end
 
-function Waveplate(theta)
-    # TO DO
+function Rotate(theta)
+    M = [cos(theta) im*sin(theta); im*sin(theta) cos(theta)]
+    return M
+end
+
+function Hadamard()
+    return Rotate(pi/4)
+end
+
+function Flip()
+    M = [0 1; 1 0]
+    return M
 end
 
 ### EXAMPLE
