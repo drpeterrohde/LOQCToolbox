@@ -142,11 +142,11 @@ function Flip()
 end
 
 """
-    ForcedMeasure(state, mode, power, HorV)
+    Project(state, mode, power, HorV)
 
 Project a given spatial and polarization mode from a state onto a photon-number given by power.
 """
-function ForcedMeasure(state, mode, power, HorV='h')
+function Project(state, mode, power, HorV='h')
     if power == 0
         if HorV == 'h'
             meas = expand(substitute(state, Dict(h[mode] => 0)))

@@ -10,5 +10,5 @@ PBS(etaH,etaV)
 Rotate(theta)
 Hadamard()
 Flip()
-ForcedMeasure(state, mode, power, HorV)
+Project(state, mode, power, HorV)
 ```
