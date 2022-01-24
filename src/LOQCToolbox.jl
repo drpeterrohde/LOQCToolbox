@@ -142,44 +142,66 @@ function Flip()
 end
 
 """
-    ForcedMeasure(state, mode, power, HorV)
+    Measure(input_state, measured_state, power)
 
 Project a given spatial and polarization mode from a state onto a photon-number given by power.
 """
-function ForcedMeasure(state, mode, power, HorV='h')
-    if power == 0
-        if HorV == 'h'
-            meas = expand(substitute(state, Dict(h[mode] => 0)))
-        elseif HorV == 'v'
-            meas = expand(substitute(state, Dict(v[mode] => 0)))
-        end
-    elseif power == 1
-        sub = state
-        for i = 2:10
-            if HorV == 'h'
-                sub = substitute(sub, Dict(h[mode]^i => 0))
-            elseif HorV == 'v'
-                sub = substitute(sub, Dict(v[mode]^i => 0))
-            end
-        end
-        if HorV == 'h'
-            diff = sub - substitute(sub, Dict(symbol => 0))
-            red = substitute(diff, Dict(symbol => 1))
-        elseif HorV == 'v'
-        end
-        meas = expand(red * sqrt(factorial(power)))
-    else
-        error("Not implemented")
+function Measure(input_state, measured_state, power)
+    new_state = input_state
+
+    #Call Measure() n number of times to measure n qubits
+    for i = 1:power
+        new_state = Measure(new_state, measured_state)
     end
-
-    return meas
+    #println(new_state)
+    
+    return new_state
 end
+    
+"""
+    Measure(input_state, measured_state)
 
-### EXAMPLE
+Project a given spatial and polarization mode from a state onto one photon-number.
+"""
+function Measure(input_state, measured_state)
+    dict1 = input_state.dict
+    key_arr = keys(dict1)
+    val_arr = values(dict1)
 
-# state = DensityOperator(h[1])
-# state = ApplyU(state, BeamSplitter(0.5))
-# println(state)
-# state = ApplyU(state, BeamSplitter(0.5))
-# state = ApplyU(state, PhaseShifter(1.0))
-# println(state)
+    D = Differential(measured_state)
+
+    #derivatives of each term in input_state wrt measured_state
+    d_arr = []
+    for i in key_arr
+        push!(d_arr, expand_derivatives(D(i)))
+    end
+    #println(d_arr)
+
+    #exponential power of measured_state in each term of input_state
+    coeff_arr = simplify(d_arr*measured_state ./ key_arr)
+    #println(coeff_arr)
+
+    #array of input_state after measurement has been done
+    normalised_arr = simplify(d_arr ./ coeff_arr)
+    replace!(normalised_arr, NaN=>0)
+    #println(normalised_arr)
+
+    #array of input_state after measurement and multiplication by corresponding coefficients
+    final_arr = simplify(normalised_arr .* val_arr)
+    #println(final_arr)
+
+    #final state after measurement
+    final_state = sum(final_arr)
+    #println(final_state)
+
+    return final_state
+end    
+
+#Example
+psi1 = Measure(h[1]*h[1]*h[1]*h[3] + 2*h[2]^3*h[1], h[1])
+psi2 = Measure(5*h[1]*h[1]*h[1]*h[3]^2 + 3*h[2]*(h[1]^4)*v[2] + 9*h[1]*v[2]^5, h[1], 3)
+println(psi1)
+println(psi2)
+
+
+
