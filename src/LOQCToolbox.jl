@@ -142,40 +142,74 @@ function Flip()
 end
 
 """
-    Project(state, mode, power, HorV)
+    Measure(input_state, measured_state, power)
 
 Project a given spatial and polarization mode from a state onto a photon-number given by power.
 """
-function Project(state, mode, power, HorV='h')
-    if power == 0
-        if HorV == 'h'
-            meas = expand(substitute(state, Dict(h[mode] => 0)))
-        elseif HorV == 'v'
-            meas = expand(substitute(state, Dict(v[mode] => 0)))
-        end
-    elseif power == 1
-        sub = state
-        for i = 2:10
-            if HorV == 'h'
-                sub = substitute(sub, Dict(h[mode]^i => 0))
-            elseif HorV == 'v'
-                sub = substitute(sub, Dict(v[mode]^i => 0))
-            end
-        end
-        if HorV == 'h'
-            diff = sub - substitute(sub, Dict(symbol => 0))
-            red = substitute(diff, Dict(symbol => 1))
-        elseif HorV == 'v'
-        end
-        meas = expand(red * sqrt(factorial(power)))
-    else
-        error("Not implemented")
-    end
+function Measure(input_state, measured_state, power)
+    new_state = input_state
 
-    return meas
+    #Call Measure() n number of times to measure n qubits
+    #Return zero state if n qubit state is measured more than n times
+    try
+        for i = 1:power
+            println("Loop ", i)
+            new_state = Measure(new_state, measured_state)
+        end
+    catch y
+        return 0
+    end
+    #println(new_state)
+
+    return new_state
 end
 
-### EXAMPLE
+"""
+    Measure(input_state, measured_state)
+
+Project a given spatial and polarization mode from a state onto one photon-number.
+"""
+function Measure(input_state, measured_state)
+    #This is a temporary fix where monomials aren't getting differentiated properly
+    #Remove this extra h[123456789] term later to fix
+    input_state = input_state + h[123456789]
+    dict1 = input_state.dict
+    key_arr = keys(dict1)
+    val_arr = values(dict1)
+    println(val_arr, "val arr")
+
+    D = Differential(measured_state)
+
+    #derivatives of each term in input_state wrt measured_state
+    d_arr = []
+    for i in key_arr
+        push!(d_arr, expand_derivatives(D(i)))
+    end
+    println(d_arr)
+
+    #exponential power of measured_state in each term of input_state
+    coeff_arr = simplify(d_arr*measured_state ./ key_arr)
+    println(coeff_arr)
+
+    #array of input_state after measurement has been done
+    normalised_arr = simplify(d_arr ./ coeff_arr)
+    replace!(normalised_arr, NaN=>0)
+    println(normalised_arr, "norm")
+
+    #array of input_state after measurement and multiplication by corresponding coefficients
+    final_arr = simplify(normalised_arr .* val_arr)
+    println(final_arr, "fina")
+
+    #final state after measurement
+    final_state = sum(final_arr)
+    println(final_state)
+
+    return final_state
+end
+
+
+
+### Examples ###
 
 # state = DensityOperator(h[1])
 # state = ApplyU(state, BeamSplitter(0.5))
@@ -183,3 +217,15 @@ end
 # state = ApplyU(state, BeamSplitter(0.5))
 # state = ApplyU(state, PhaseShifter(1.0))
 # println(state)
+
+#psi1 = Measure(h[1]*h[1]*h[1]*h[3] + 2*h[2]^3*h[1], h[1])
+#psi2 = Measure(5*h[1]*h[1]*h[1]*h[3]^2 + 3*h[2]*(h[1]^4)*v[2] + 9*h[1]*v[2]^5, h[1], 3)
+#println(psi1)
+#println(psi2)
+
+#psi3 = Measure(h[1]*h[1]*h[1]*h[3] + 2*h[2]^3*h[1], h[1],3)
+#println(psi3)
+
+
+psi4 = Measure(3*h[1]*h[2]*h[1], h[1])
+println(psi4)
